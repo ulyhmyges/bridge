@@ -1,3 +1,28 @@
+## Bridge project
+
+### Token ERC20
+
+- contract src/TG.sol
+- calcul
+1 once d'or <=> 31 g d'or
+
+### Installation
+
+doc : https://github.com/smartcontractkit/chainlink-brownie-contracts
+
+```
+forge install smartcontractkit/chainlink-brownie-contracts --no-commit
+```
+Then, update your foundry.toml to include the following in the remappings.
+
+```
+remappings = [
+  '@chainlink/contracts/=lib/chainlink-brownie-contracts/contracts/src/',
+]
+```
+
+
+
 ## Foundry
 
 **Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
