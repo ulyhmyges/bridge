@@ -11,8 +11,8 @@ contract Gold is ERC20 {
     
     // one ounce represents 31 gram of gold
     uint256 internal constant OUNCE = 31;
-    constructor(uint256 initialSupply, string memory name, string memory symbol, address addr) ERC20 (name, symbol) {
-        _mint(addr, initialSupply);
+    constructor(uint256 initialSupply) ERC20 ("Gold", "GT") {
+        _mint(msg.sender, initialSupply);
         dataFeedXAU = AggregatorV3Interface(
             0xC5981F461d74c46eB4b0CF3f4Ec79f025573B0Ea
         );
@@ -30,6 +30,18 @@ contract Gold is ERC20 {
 
     }
 
+    /**
+     * @dev Returns the number of decimal places used for token display.
+     * Typically, ERC20 tokens use 18 decimals, but this implementation 
+     * returns 8 decimals instead.
+     *
+     * @return uint8 The number of decimal places.
+     */
+    function decimals() public view virtual override returns (uint8) {
+        return 8;
+    }
+
+
     function getGolds(uint256 valueWEI) public view returns (uint256) {
         uint256 priceGold_Dollars = getXAU_USD();
         uint256 priceGold_ETH = getETH_USD() ;
@@ -42,7 +54,7 @@ contract Gold is ERC20 {
     // XAU/USD 0xC5981F461d74c46eB4b0CF3f4Ec79f025573B0Ea
     // ETH/USD 0x694AA1769357215DE4FAC081bf1f309aDC325306
     
-    // get price in ETH of 1g of gold
+    // get price in ETH of 1g of gold equivalent of 1 Gold token
     function getPrice() public view returns (uint256) {
         uint256 priceGold_Dollars = getXAU_USD();
         uint256 priceGold_ETH = getETH_USD() ;
