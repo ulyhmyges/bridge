@@ -16,12 +16,12 @@ contract GoldScript is Script {
     }
 
     function run() public {
-        gold = new Gold(50, "Gold", "Gold", wallet);
-        console.log(gold.getXAU_USD());
-        console.log(gold.getDecimalsXAU()); 
-        console.log(gold.getETH_USD());
-        console.log(gold.getDecimalsETH());
-        //console.log(gold.getPrice());
-        console.log(gold.getGolds(100*10**18));
+
+        gold = new Gold(50*10**18, wallet); // 50 GT
+        console.log(gold.getPriceGT());
+        
+        console.log(gold.balanceOf(wallet));
+        console.log(gold.getGDZ(1000));
+        //console.log(gold.getGolds(100*10**18));
     }
 }

@@ -10,10 +10,10 @@ contract GoldTest is Test {
     address public USER = address(0x36);
     address public myAddr = address(0x99bdA7fd93A5c41Ea537182b37215567e832A726);
     function setUp() public {
-        
+        gold = new Gold(50, myAddr);
     }
 
-    function test_Something() public view {
-      
+    function test_GetPrice() public view {
+      console.log(myAddr);
     }
 }

@@ -11,8 +11,8 @@ contract Gold is ERC20 {
     
     // one ounce represents 31 gram of gold
     uint256 internal constant OUNCE = 31;
-    constructor(uint256 initialSupply) ERC20 ("Gold", "GT") {
-        _mint(msg.sender, initialSupply);
+    constructor(uint256 initialSupply, address addr) ERC20 ("Gold", "GT") {
+        _mint(addr, initialSupply);
         dataFeedXAU = AggregatorV3Interface(
             0xC5981F461d74c46eB4b0CF3f4Ec79f025573B0Ea
         );
@@ -27,7 +27,7 @@ contract Gold is ERC20 {
     // Number of Gold tokens = value * 31 / (priceXAU/ETH * 10^18) with value in WEI
     /// @param _to recipient
     function safeMint(address _to) payable public {
-
+        
     }
 
     /**
@@ -38,15 +38,15 @@ contract Gold is ERC20 {
      * @return uint8 The number of decimal places.
      */
     function decimals() public view virtual override returns (uint8) {
-        return 8;
+        return 18;
     }
 
-
-    function getGolds(uint256 valueWEI) public view returns (uint256) {
-        uint256 priceGold_Dollars = getXAU_USD();
-        uint256 priceGold_ETH = getETH_USD() ;
-        (bool success, uint256 nbTokens) = Math.tryDiv(valueWEI * priceGold_Dollars, priceGold_ETH * OUNCE * 10**18);
-        require(success, "Error getGolds");
+    // get number of GDZ from WEI value
+    // 1 GT = 10**18 GDZ
+    function getGDZ(uint256 valueWEI) public view returns (uint256) {
+        uint256 priceGT = getPriceGT() ;
+        (bool success, uint256 nbTokens) = Math.tryDiv(valueWEI* 10**18, priceGT);
+        require(success, "Error get GODIZ");
         return nbTokens;
     }
 
@@ -54,13 +54,14 @@ contract Gold is ERC20 {
     // XAU/USD 0xC5981F461d74c46eB4b0CF3f4Ec79f025573B0Ea
     // ETH/USD 0x694AA1769357215DE4FAC081bf1f309aDC325306
     
-    // get price in ETH of 1g of gold equivalent of 1 Gold token
-    function getPrice() public view returns (uint256) {
+    // get price in WEI of 1g of gold 
+    // WEI price for 1 GT
+    function getPriceGT() public view returns (uint256) {
         uint256 priceGold_Dollars = getXAU_USD();
         uint256 priceGold_ETH = getETH_USD() ;
-        (bool success, uint256 priceXAU_ETH) = Math.tryDiv(priceGold_Dollars, priceGold_ETH * 31);
+        (bool success, uint256 priceXAU_ETH) = Math.tryDiv(priceGold_Dollars * 10**18, priceGold_ETH * OUNCE);
         require(success, "Error division AUX/ETH");
-        return priceXAU_ETH;
+        return priceXAU_ETH; // 35885249284894932 WEI  (~O.O35ETH/GT)
     }
 
     /// price = 246227956862
