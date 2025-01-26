@@ -4,7 +4,12 @@
 
 - contract src/TG.sol
 - calcul
-1 once d'or <=> 31 g d'or
+1 once d'or <=> 31 g d'or <=> 31 token Gold
+
+Pay in ETH to receive Gold tokens
+
+Number of Gold tokens = value * 31 / (priceXAU/ETH * 10^18) with value in WEI sent by the caller
+XAU/ETH = (XAU/USD)/(ETH/USD)
 
 ### Installation
 
