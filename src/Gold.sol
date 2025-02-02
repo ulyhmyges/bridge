@@ -10,8 +10,8 @@ contract Gold is ERC20 {
     AggregatorV3Interface internal dataFeedETH;
     
     // one ounce represents 31 gram of gold
-    uint256 internal constant OUNCE = 31;
-    constructor(uint256 initialSupply, address addr) ERC20 ("Gold", "GT") {
+    uint256 public constant OUNCE = 31;
+    constructor(uint256 initialSupply, address addr) ERC20 ("Gold", "GT") payable {
         _mint(addr, initialSupply);
         dataFeedXAU = AggregatorV3Interface(
             0xC5981F461d74c46eB4b0CF3f4Ec79f025573B0Ea
@@ -23,27 +23,18 @@ contract Gold is ERC20 {
 
     }
 
-    /// buy token gold with ETH
-    // Number of Gold tokens = value * 31 / (priceXAU/ETH * 10^18) with value in WEI
+    /// buy Gold tokens with ETH
+    // Mint the number of GDZ from WEI sent to the recipient _to
     /// @param _to recipient
     function safeMint(address _to) payable public {
-        
-    }
-
-    /**
-     * @dev Returns the number of decimal places used for token display.
-     * Typically, ERC20 tokens use 18 decimals, but this implementation 
-     * returns 8 decimals instead.
-     *
-     * @return uint8 The number of decimal places.
-     */
-    function decimals() public view virtual override returns (uint8) {
-        return 18;
+        uint256 amount = getGDZ(msg.value);
+        _mint(_to, amount);
     }
 
     // get number of GDZ from WEI value
     // 1 GT = 10**18 GDZ
     function getGDZ(uint256 valueWEI) public view returns (uint256) {
+        require(valueWEI != 0, "Not enough amount of WEI.");
         uint256 priceGT = getPriceGT() ;
         (bool success, uint256 nbTokens) = Math.tryDiv(valueWEI* 10**18, priceGT);
         require(success, "Error get GODIZ");
