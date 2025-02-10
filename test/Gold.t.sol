@@ -11,7 +11,7 @@ contract GoldTest is Test {
     address public myAddr = address(0x99bdA7fd93A5c41Ea537182b37215567e832A726);
 
     function setUp() public {
-        gold = new Gold(50, myAddr);
+        gold = new Gold(50*10**18, myAddr);
     }
 
     function test_GetPrice() public view {
@@ -63,4 +63,23 @@ contract GoldTest is Test {
     function test_OUNCE() public view {
       assertEq(gold.OUNCE(), 31);
     }
+
+    function test_safeMint() public {
+      // check balance
+      assertEq(0, gold.balanceOf(USER));
+
+      // transaction
+      (bool success, ) = address(gold).call{value: 1 ether}(abi.encodeWithSignature("safeMint(address)", USER));
+      assertEq(success, true);
+      uint256 amount = gold.getGDZ(1 ether);
+      console.log("amount: ", amount); // 27.85 GT (27.85e18)
+
+      // check balance
+      assertEq(amount, gold.balanceOf(USER));
+    }
+
+    //   function safeMint(address _to) payable public {
+    //     uint256 amount = getGDZ(msg.value);
+    //     _mint(_to, amount);
+    // }
 }

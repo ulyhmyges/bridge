@@ -46,7 +46,7 @@ contract Gold is ERC20 {
     // ETH/USD 0x694AA1769357215DE4FAC081bf1f309aDC325306
     
     // get price in WEI of 1g of gold 
-    // WEI price for 1 GT
+    // WEI price for 1 GT (=> O.035541363575261088e18)
     function getPriceGT() public view returns (uint256) {
         uint256 priceGold_Dollars = getXAU_USD();
         uint256 priceGold_ETH = getETH_USD() ;
