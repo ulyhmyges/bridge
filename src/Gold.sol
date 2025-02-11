@@ -16,8 +16,8 @@ contract Gold is ERC20, Pausable{
     address public lottery ;
     uint256 public totalFees;
     address public owner;
-    constructor(uint256 initialSupply, address addr) ERC20 ("Gold", "GT") {
-        _mint(addr, initialSupply);
+    constructor(uint256 _initialSupply, address _addr, address _lottery) ERC20 ("Gold", "GT") {
+        _mint(_addr, _initialSupply);
         dataFeedXAU = AggregatorV3Interface(
             0xC5981F461d74c46eB4b0CF3f4Ec79f025573B0Ea
         );
@@ -28,26 +28,32 @@ contract Gold is ERC20, Pausable{
 
         totalFees = 0;
         owner = msg.sender;
+        lottery = _lottery;
     }
 
     /// buy Gold tokens with ETH
     // Mint the number of GDZ from WEI sent to the recipient _to
     /// @param _to recipient
-    function safeMint(address _to) payable whenNotPaused public {
+    function safeMint(address _to) public payable whenNotPaused  {
         uint256 amountWEI = msg.value;
         uint256 tax = fees(amountWEI);
-        (bool success, ) = lottery.call{value: tax}("");
-        require(success, "safeMint Error: Transfer fees failed.");
+   
+        deposit(tax);
 
         uint256 netWEI = amountWEI - tax;
         uint256 tokens = getGDZ(netWEI, getXAU_USD(), getETH_USD());
         _mint(_to, tokens);
     }
 
+    function deposit(uint256 tax) public {
+        (bool success, ) = lottery.call{value: tax}("");
+        require(success, "deposit Error: Transfer fees failed.");
+    }
+
     function safeBurn(uint256 gdz) whenNotPaused public {
         address user = msg.sender; 
-        uint256 tokens = balanceOf(user);
-        require(tokens >= gdz, "safeBurn Error: Not enough");
+        uint256 tokens_user = balanceOf(user);
+        require(tokens_user >= gdz, "safeBurn Error: Not enough");
         uint256 amountWEI = getWEI(gdz, getXAU_USD(), getETH_USD());
         uint256 tax = fees(amountWEI);
 

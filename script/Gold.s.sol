@@ -2,9 +2,11 @@
 pragma solidity ^0.8.20;
 import {Script, console} from "forge-std/Script.sol";
 import {Gold} from "../src/Gold.sol";
+import {Lottery} from "../src/Lottery.sol";
 
 contract GoldScript is Script {
     Gold public gold;
+    Lottery public lottery;
     address public wallet;
     address public account;
 
@@ -15,7 +17,7 @@ contract GoldScript is Script {
 
     function run() public {
         vm.startBroadcast(wallet);
-        gold = new Gold(50*10**18, wallet); // 50 GT
+        gold = new Gold(50*10**18, wallet, address(lottery)); // 50 GT
         
         // check balance 
         console.log("USER tokens : ", gold.balanceOf(account), " GDZ");

@@ -4,17 +4,21 @@ pragma solidity ^0.8.20;
 import {Test, console} from "forge-std/Test.sol";
 import {Gold} from "../src/Gold.sol";
 import {GoldScript} from "../script/Gold.s.sol";
+import {Lottery} from "../src/Lottery.sol";
 
 contract GoldTest is Test {
     Gold public gold;
+    Lottery public lottery;
     GoldScript public script;
 
     address public USER = address(0x36);
     address public myAddr = address(0x99bdA7fd93A5c41Ea537182b37215567e832A726);
 
     function setUp() public {
-        gold = new Gold(50*10**18, myAddr);
+        lottery = new Lottery();
+        gold = new Gold(50*10**18, myAddr, address(lottery));
         script = new GoldScript();
+        deal(USER, 1 ether);
     }
 
     /// price = 279815965000
@@ -71,14 +75,35 @@ contract GoldTest is Test {
       assertEq(0, gold.balanceOf(USER));
 
       // transaction
-      (bool success, ) = address(gold).call{value: 1 ether}(abi.encodeWithSignature("safeMint(address)", USER));
-      assertEq(success, true);
-      uint256 amount = gold.getGDZ(1 ether, gold.getXAU_USD(), gold.getETH_USD());
-      uint256 tax = gold.fees(amount);
-      uint256 net = amount - tax;
+      vm.startBroadcast(USER);
+      gold.safeMint{value: 1 ether}(USER);
+      uint256 tax = gold.fees(1 ether);
+      uint256 net = 1 ether - tax;
+      uint256 tokens_user = gold.getGDZ(net, gold.getXAU_USD(), gold.getETH_USD());
 
+      vm.stopBroadcast();
       // check balance
-      assertEq(net, gold.balanceOf(USER)); // 27.425020726584135864 GT
+      assertEq(tokens_user, gold.balanceOf(USER)); // 27.425020726584135864 GT
+    }
+
+    function test_deposit() public {
+      //vm.startBroadcast(USER);
+      console.log(msg.sender);
+      (bool success,) = address(gold).call{value: 50 ether}("");
+      assertTrue(success);
+      gold.deposit(50 ether);
+      //vm.stopBroadcast();
+    }
+
+
+    function test_deposit_failed() public {
+      //vm.startBroadcast(USER);
+      console.log(msg.sender);
+      (bool success,) = address(gold).call{value: 5 ether}("");
+      assertTrue(success);
+      vm.expectRevert();
+      gold.deposit(50 ether);
+      //vm.stopBroadcast();
     }
 
     function test_GetWEI() public view {
