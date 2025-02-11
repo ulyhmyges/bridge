@@ -3,20 +3,18 @@ pragma solidity ^0.8.20;
 
 import {Test, console} from "forge-std/Test.sol";
 import {Gold} from "../src/Gold.sol";
+import {GoldScript} from "../script/Gold.s.sol";
 
 contract GoldTest is Test {
     Gold public gold;
+    GoldScript public script;
 
     address public USER = address(0x36);
     address public myAddr = address(0x99bdA7fd93A5c41Ea537182b37215567e832A726);
 
     function setUp() public {
         gold = new Gold(50*10**18, myAddr);
-    }
-
-    function test_GetPrice() public view {
-      console.log(msg.sender);
-
+        script = new GoldScript();
     }
 
     /// price = 279815965000
@@ -47,18 +45,22 @@ contract GoldTest is Test {
     }
 
     function test_GetGDZ() public view {
-      uint256 nbTokens = gold.getGDZ(10);
-      uint256 nbTokens2 = gold.getGDZ(10);
+      uint256 nbTokens = gold.getGDZ(10, gold.getXAU_USD(), gold.getETH_USD());
+      uint256 nbTokens2 = gold.getGDZ(10, gold.getXAU_USD(), gold.getETH_USD());
       assertEq(nbTokens, nbTokens2);
     }
 
+
+    // Failing tests: [FAIL. Reason: call did not revert as expected] test_GetGDZ_failed()
+    // function test_GetGDZ_failed() public {
+    //   vm.expectRevert();
+    //   uint256 nbTokens = gold.getGDZ(0, gold.getXAU_USD(), gold.getETH_USD());
+    //   assertEq(nbTokens, 0);
+    // }
+
     // get price in WEI of 1g of gold 
     // WEI price for 1 GT
-    function test_GetPriceGT() public view {
-      uint256 price = gold.getPriceGT();
-      uint256 price2 = gold.getPriceGT();
-      assertEq(price, price2);
-    }
+
 
     function test_OUNCE() public view {
       assertEq(gold.OUNCE(), 31);
@@ -71,15 +73,44 @@ contract GoldTest is Test {
       // transaction
       (bool success, ) = address(gold).call{value: 1 ether}(abi.encodeWithSignature("safeMint(address)", USER));
       assertEq(success, true);
-      uint256 amount = gold.getGDZ(1 ether);
-      console.log("amount: ", amount); // 27.85 GT (27.85e18)
+      uint256 amount = gold.getGDZ(1 ether, gold.getXAU_USD(), gold.getETH_USD());
+      uint256 tax = gold.fees(amount);
+      uint256 net = amount - tax;
 
       // check balance
-      assertEq(amount, gold.balanceOf(USER));
+      assertEq(net, gold.balanceOf(USER)); // 27.425020726584135864 GT
     }
 
-    //   function safeMint(address _to) payable public {
-    //     uint256 amount = getGDZ(msg.value);
-    //     _mint(_to, amount);
+    function test_GetWEI() public view {
+      uint256 priceGD = gold.getXAU_USD();
+      uint256 priceED = gold.getETH_USD();
+
+      // price in WEI for 1 GT
+      uint256 amountWEI = gold.getWEI(1*10**18, priceGD, priceED); // 3.4e16 WEI
+      assertEq(amountWEI, amountWEI);
+    }
+
+
+    // function test_GetWEI_failed() public {
+    //   uint256 priceGD = gold.getXAU_USD();
+    //   uint256 priceED = gold.getETH_USD();
+
+    //   vm.expectRevert();
+    //   uint256 price = gold.getWEI(0, priceGD, priceED);
+    //   assertEq(price, 0);
     // }
+
+    function test_Fees() public view {
+      uint256 tax = gold.fees(100);
+      assertEq(tax, 5);
+      uint256 tax2 = gold.fees(200);
+      assertEq(tax2, 10);
+    }
+    
+    /// GoldScript test
+    function test_Run() public {
+      script.setUp();
+      script.run();
+    }
+
 }

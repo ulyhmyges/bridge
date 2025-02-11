@@ -4,14 +4,19 @@ pragma solidity ^0.8.20;
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {AggregatorV3Interface} from "@chainlink/contracts/v0.8/shared/interfaces/AggregatorV3Interface.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
+import "@openzeppelin/contracts/utils/Pausable.sol";
 
-contract Gold is ERC20 {
+
+contract Gold is ERC20, Pausable{
     AggregatorV3Interface internal dataFeedXAU;
     AggregatorV3Interface internal dataFeedETH;
     
     // one ounce represents 31 gram of gold
     uint256 public constant OUNCE = 31;
-    constructor(uint256 initialSupply, address addr) ERC20 ("Gold", "GT") payable {
+    address public lottery ;
+    uint256 public totalFees;
+    address public owner;
+    constructor(uint256 initialSupply, address addr) ERC20 ("Gold", "GT") {
         _mint(addr, initialSupply);
         dataFeedXAU = AggregatorV3Interface(
             0xC5981F461d74c46eB4b0CF3f4Ec79f025573B0Ea
@@ -21,23 +26,73 @@ contract Gold is ERC20 {
             0x694AA1769357215DE4FAC081bf1f309aDC325306
         );
 
+        totalFees = 0;
+        owner = msg.sender;
     }
 
     /// buy Gold tokens with ETH
     // Mint the number of GDZ from WEI sent to the recipient _to
     /// @param _to recipient
-    function safeMint(address _to) payable public {
-        uint256 amount = getGDZ(msg.value);
-        _mint(_to, amount);
+    function safeMint(address _to) payable whenNotPaused public {
+        uint256 amountWEI = msg.value;
+        uint256 tax = fees(amountWEI);
+        (bool success, ) = lottery.call{value: tax}("");
+        require(success, "safeMint Error: Transfer fees failed.");
+
+        uint256 netWEI = amountWEI - tax;
+        uint256 tokens = getGDZ(netWEI, getXAU_USD(), getETH_USD());
+        _mint(_to, tokens);
+    }
+
+    function safeBurn(uint256 gdz) whenNotPaused public {
+        address user = msg.sender; 
+        uint256 tokens = balanceOf(user);
+        require(tokens >= gdz, "safeBurn Error: Not enough");
+        uint256 amountWEI = getWEI(gdz, getXAU_USD(), getETH_USD());
+        uint256 tax = fees(amountWEI);
+
+        // deposit fees on Lottery contract
+        (bool success, ) = lottery.call{value: tax}(""); // need receive or fallback function !!
+        require(success, "safeBurn Error: Can not deposit fees");
+
+        // send ETH to user
+        uint256 netWEI = amountWEI - tax;
+        (bool success_user, ) = user.call{value: netWEI}("");
+
+        require(success_user, "safeBurn Error: Sending ETH to user");
+    }
+
+    modifier onlyOwner {
+        require(msg.sender == owner, "safeBurn Error: Not authorized.");
+        _;
+    }
+
+    // need receive or fallback function to the recipient contract
+    function withdraw() public onlyOwner whenNotPaused {
+        require(address(this).balance > 0, "No ETH to withdraw");
+        (bool success, ) = owner.call{value: address(this).balance}("");
+        require(success, "Transfer failed.");
+    }
+
+    // This function is executed on a call to the contract if none of the other
+    // functions match the given function signature, or if no data is supplied at all
+    fallback() external payable {}
+    
+
+    // This function is executed when a contract receives plain Ether (without data)
+    receive() external payable {}
+
+    function fees(uint256 amount) public pure returns (uint256){
+        (, uint256 tax) = Math.tryDiv(amount * 5, 100);
+        return tax;
     }
 
     // get number of GDZ from WEI value
     // 1 GT = 10**18 GDZ
-    function getGDZ(uint256 valueWEI) public view returns (uint256) {
+    function getGDZ(uint256 valueWEI, uint256 priceGold_Dollars, uint256 priceETH_Dollars) public pure returns (uint256) {
         require(valueWEI != 0, "Not enough amount of WEI.");
-        uint256 priceGT = getPriceGT() ;
-        (bool success, uint256 nbTokens) = Math.tryDiv(valueWEI* 10**18, priceGT);
-        require(success, "Error get GODIZ");
+        uint256 priceGT = getWEI(1 ether, priceGold_Dollars, priceETH_Dollars) ;
+        (, uint256 nbTokens) = Math.tryDiv(valueWEI * 10**18, priceGT);
         return nbTokens;
     }
 
@@ -45,14 +100,14 @@ contract Gold is ERC20 {
     // XAU/USD 0xC5981F461d74c46eB4b0CF3f4Ec79f025573B0Ea
     // ETH/USD 0x694AA1769357215DE4FAC081bf1f309aDC325306
     
+
     // get price in WEI of 1g of gold 
     // WEI price for 1 GT (=> O.035541363575261088e18)
-    function getPriceGT() public view returns (uint256) {
-        uint256 priceGold_Dollars = getXAU_USD();
-        uint256 priceGold_ETH = getETH_USD() ;
-        (bool success, uint256 priceXAU_ETH) = Math.tryDiv(priceGold_Dollars * 10**18, priceGold_ETH * OUNCE);
-        require(success, "Error division AUX/ETH");
-        return priceXAU_ETH; // 35885249284894932 WEI  (~O.O35ETH/GT)
+    // 35885249284894932 WEI  (~O.O35ETH/GT)
+    function getWEI(uint256 gdz, uint256 priceGold_Dollars, uint256 priceETH_Dollars) public pure returns (uint256) {
+        (, uint256 priceXAU_ETH) = Math.tryDiv(priceGold_Dollars * 10**18, priceETH_Dollars * OUNCE);
+        (, uint256 amount)= Math.tryDiv(gdz * priceXAU_ETH, 10**18);
+        return amount;
     }
 
     /// price = 246227956862
