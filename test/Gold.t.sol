@@ -105,31 +105,6 @@ contract GoldTest is Test {
       vm.stopBroadcast();
     }
 
-    // function test_deposit() public {
-    //   //vm.startBroadcast(USER);
-    //   console.log(msg.sender);
-    //   (bool success,) = address(gold).call{value: 50 ether}("");
-    //   assertTrue(success);
-    //   gold.deposit(50 ether);
-    //   //vm.stopBroadcast();
-    // }
-
-    // function test_deposit_failed() public {
-    //   //vm.startBroadcast(USER);
-    //   console.log(msg.sender);
-    //   (bool success,) = address(gold).call{value: 5 ether}("");
-    //   assertTrue(success);
-    //   vm.expectRevert();
-    //   gold.deposit(50 ether);
-    //   //vm.stopBroadcast();
-    // }
-
-    // function test_deposit_zero() public {
-    //   vm.expectRevert();
-    //   gold.deposit(0);
-    // }
-
-
     function test_SafeBurn() public {
 
       assertEq(0, gold.balanceOf(USER));
@@ -230,7 +205,6 @@ contract GoldTest is Test {
     
     /// GoldScript test
     function test_Run() public {
-      script.setUp();
       script.run();
     }
 

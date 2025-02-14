@@ -17,6 +17,7 @@ contract GoldScript is Script {
 
     function run() public {
         vm.startBroadcast(wallet);
+        lottery = new Lottery(1);
         gold = new Gold(50*10**18, wallet, address(lottery)); // 50 GT
         
         // check balance 

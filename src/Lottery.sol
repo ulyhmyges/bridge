@@ -96,36 +96,36 @@ contract Lottery  {
     
 
     // Lancer la loterie via Chainlink VRF
-    // function requestRandomWinner() public returns (uint256 requestId) {
-    //     require(lotteryPool > 0, "Lottery pool is empty");
-    //     requestId = s_vrfCoordinator.requestRandomWords(
-    //         VRFV2PlusClient.RandomWordsRequest({
-    //             keyHash: s_keyHash,
-    //             subId: s_subscriptionId,
-    //             requestConfirmations: requestConfirmations,
-    //             callbackGasLimit: callbackGasLimit,
-    //             numWords: numWords,
-    //             // Set nativePayment to true to pay for VRF requests with Sepolia ETH instead of LINK
-    //             extraArgs: VRFV2PlusClient._argsToBytes(
-    //                 VRFV2PlusClient.ExtraArgsV1({nativePayment: false})
-    //             )
-    //         })
-    //     );
-    // }
+    function requestRandomWinner() public returns (uint256 requestId) {
+        require(lotteryPool > 0, "Lottery pool is empty");
+        requestId = s_vrfCoordinator.requestRandomWords(
+            VRFV2PlusClient.RandomWordsRequest({
+                keyHash: s_keyHash,
+                subId: s_subscriptionId,
+                requestConfirmations: requestConfirmations,
+                callbackGasLimit: callbackGasLimit,
+                numWords: numWords,
+                // Set nativePayment to true to pay for VRF requests with Sepolia ETH instead of LINK
+                extraArgs: VRFV2PlusClient._argsToBytes(
+                    VRFV2PlusClient.ExtraArgsV1({nativePayment: false})
+                )
+            })
+        );
+    }
 
     // Attribution du gagnant via VRF
-    // function fulfillRandomWords(
-    //     uint256 requestId,
-    //     uint256[] calldata randomWords
-    // ) internal override {
-    //     console.log(requestId);
-    //     require(participants.length > 0, "No participants in the lottery");
-    //     uint256 winnerIndex = randomWords[0] % participants.length;
-    //     winner = participants[winnerIndex];
-    //     payable(winner).transfer(lotteryPool); // Transférer le pool au gagnant
-    //     lotteryPool = 0; // Réinitialiser le pool
-    //     delete participants; // Réinitialiser les participants
-    // }
+    function fulfillRandomWords(
+        uint256 requestId,
+        uint256[] calldata randomWords
+    ) internal override {
+        console.log(requestId);
+        require(participants.length > 0, "No participants in the lottery");
+        uint256 winnerIndex = randomWords[0] % participants.length;
+        winner = participants[winnerIndex];
+        payable(winner).transfer(lotteryPool); // Transférer le pool au gagnant
+        lotteryPool = 0; // Réinitialiser le pool
+        delete participants; // Réinitialiser les participants
+    }
 
     function add(address _participant) internal {
         if (isParticipant(_participant)){
