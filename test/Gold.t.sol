@@ -86,6 +86,19 @@ contract GoldTest is Test {
       assertEq(tokens_user, gold.balanceOf(USER)); // 27.425020726584135864 GT
     }
 
+    function test_safeMint_failed() public {
+      // check balance
+      assertEq(0, gold.balanceOf(USER));
+
+      // transaction
+      vm.startBroadcast(USER);
+
+      vm.expectRevert();
+      gold.safeMint{value: 0}(USER);
+
+      vm.stopBroadcast();
+    }
+
     function test_deposit() public {
       //vm.startBroadcast(USER);
       console.log(msg.sender);
@@ -94,7 +107,6 @@ contract GoldTest is Test {
       gold.deposit(50 ether);
       //vm.stopBroadcast();
     }
-
 
     function test_deposit_failed() public {
       //vm.startBroadcast(USER);
@@ -105,6 +117,27 @@ contract GoldTest is Test {
       gold.deposit(50 ether);
       //vm.stopBroadcast();
     }
+
+    function test_deposit_zero() public {
+      vm.expectRevert();
+      gold.deposit(0);
+    }
+
+
+    // function test_SafeBurn() public view {
+    //    // check balance
+    //   assertEq(0, gold.balanceOf(USER));
+
+    //   // transaction
+    //   vm.startBroadcast(USER);
+    //   gold.safeMint{value: 1 ether}(USER);
+    //   uint256 tokens_user = gold.balanceOf(USER); // 27.425020726584135864 GT
+
+    //   gold.safeBurn();
+
+    //   vm.stopBroadcast();
+   
+    // }
 
     function test_GetWEI() public view {
       uint256 priceGD = gold.getXAU_USD();

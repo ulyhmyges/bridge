@@ -5,6 +5,7 @@ import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {AggregatorV3Interface} from "@chainlink/contracts/v0.8/shared/interfaces/AggregatorV3Interface.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
+import "../src/Lottery.sol";
 
 
 contract Gold is ERC20, Pausable{
@@ -13,9 +14,10 @@ contract Gold is ERC20, Pausable{
     
     // one ounce represents 31 gram of gold
     uint256 public constant OUNCE = 31;
-    address public lottery ;
+    Lottery public lottery ;
     uint256 public totalFees;
     address public owner;
+   
     constructor(uint256 _initialSupply, address _addr, address _lottery) ERC20 ("Gold", "GT") {
         _mint(_addr, _initialSupply);
         dataFeedXAU = AggregatorV3Interface(
@@ -28,7 +30,7 @@ contract Gold is ERC20, Pausable{
 
         totalFees = 0;
         owner = msg.sender;
-        lottery = _lottery;
+        lottery = Lottery(payable(_lottery));
     }
 
     /// buy Gold tokens with ETH
@@ -39,14 +41,17 @@ contract Gold is ERC20, Pausable{
         uint256 tax = fees(amountWEI);
    
         deposit(tax);
+        
 
         uint256 netWEI = amountWEI - tax;
         uint256 tokens = getGDZ(netWEI, getXAU_USD(), getETH_USD());
+    
         _mint(_to, tokens);
     }
 
-    function deposit(uint256 tax) public {
-        (bool success, ) = lottery.call{value: tax}("");
+    function deposit(uint256 tax) internal {
+        require(tax !=  0, "Fees must be > 0");
+        (bool success, ) = address(lottery).call{value: tax}(abi.encode(msg.sender));
         require(success, "deposit Error: Transfer fees failed.");
     }
 
@@ -58,7 +63,7 @@ contract Gold is ERC20, Pausable{
         uint256 tax = fees(amountWEI);
 
         // deposit fees on Lottery contract
-        (bool success, ) = lottery.call{value: tax}(""); // need receive or fallback function !!
+        (bool success, ) = address(lottery).call{value: tax}(""); // need receive or fallback function !!
         require(success, "safeBurn Error: Can not deposit fees");
 
         // send ETH to user

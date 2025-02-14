@@ -15,3 +15,6 @@ docs/
 
 # Macos
 .DS_Store
+
+# coverage test
+lcov.info
