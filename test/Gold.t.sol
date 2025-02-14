@@ -15,10 +15,12 @@ contract GoldTest is Test {
     address public wallet = address(0x99bdA7fd93A5c41Ea537182b37215567e832A726);
 
     function setUp() public {
+        vm.startBroadcast(wallet);
         lottery = new Lottery(1);
         gold = new Gold(50*10**18, wallet, address(lottery));
         script = new GoldScript();
         deal(USER, 1 ether);
+        vm.stopBroadcast();
     }
 
     /// price = 279815965000
@@ -199,6 +201,32 @@ contract GoldTest is Test {
       uint256 tax2 = gold.fees(200);
       assertEq(tax2, 10);
     }
+
+    function test_withdraw() public {
+      vm.startBroadcast(USER);
+      gold.safeMint{value: 1 ether}(USER);
+      vm.stopBroadcast();
+
+      vm.startBroadcast(wallet);
+      assertEq(0.975*10**18, address(gold).balance);
+      gold.withdraw();
+      vm.stopBroadcast();
+    }
+
+    function test_withdraw_failed() public {
+      vm.startBroadcast(USER);
+      gold.safeMint{value: 1 ether}(USER);
+      vm.expectRevert();
+      gold.withdraw();
+      vm.stopBroadcast();
+    }
+
+
+    // function withdraw() public onlyOwner whenNotPaused {
+    //     require(address(this).balance > 0, "No ETH to withdraw");
+    //     (bool success, ) = owner.call{value: address(this).balance}("");
+    //     require(success, "Transfer failed.");
+    // }
     
     /// GoldScript test
     function test_Run() public {

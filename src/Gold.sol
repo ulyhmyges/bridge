@@ -75,7 +75,7 @@ contract Gold is ERC20, Pausable{
     }
 
     modifier onlyOwner {
-        require(msg.sender == owner, "safeBurn Error: Not authorized.");
+        require(msg.sender == owner, "Error: Not authorized.");
         _;
     }
 

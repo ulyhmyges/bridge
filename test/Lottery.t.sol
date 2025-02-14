@@ -94,7 +94,27 @@ contract LotteryTest is Test {
         console.log(USER.balance);
         assertEq(2.5*10**16, USER.balance); // collect 2.5% fees
         vm.stopBroadcast();
-    
+    }
+
+
+    function test_SelectWinner_failed() public {
+        vm.startBroadcast(USER);
+        assertEq(0, gold.balanceOf(USER));
+
+        // transaction
+        gold.safeMint{value: 1 ether}(USER);
+
+        uint256 len = lottery.getParticipantsCount();
+        assertEq(len, 1);
+        address sender = lottery.getParticipants()[0];
+        assertEq(sender, USER);
+        // check balance
+        assertEq(USER.balance, 0);
+
+        vm.expectRevert();
+        lottery.selectWinner();
+       
+        vm.stopBroadcast();
     }
 
 }
