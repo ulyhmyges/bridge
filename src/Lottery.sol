@@ -20,7 +20,7 @@ import {VRFV2PlusClient} from "@chainlink/contracts/v0.8/vrf/dev/libraries/VRFV2
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 
-contract Lottery  {
+contract Lottery is VRFConsumerBaseV2Plus {
 
     uint256 s_subscriptionId;
     address vrfCoordinator = 0x8103B0A8A00be2DDC778e6e7eaa21791Cd364625;
@@ -38,20 +38,20 @@ contract Lottery  {
     address public winner;
     address[] public participants;
 
-    address public owner;
+    // address public owner;
 
-    // constructor(uint256 subscriptionId) VRFConsumerBaseV2Plus(vrfCoordinator) {
-    //     s_subscriptionId = subscriptionId;
-    // }
-    constructor(uint256 subscriptionId) {
+    constructor(uint256 subscriptionId) VRFConsumerBaseV2Plus(vrfCoordinator) {
         s_subscriptionId = subscriptionId;
-        owner = msg.sender;
     }
+    // constructor(uint256 subscriptionId) {
+    //     s_subscriptionId = subscriptionId;
+    //     owner = msg.sender;
+    // }
 
-    modifier onlyOwner {
-        require (msg.sender == owner, "Not authorized");
-        _;
-    }
+    // modifier onlyOwner {
+    //     require (msg.sender == owner, "Not authorized");
+    //     _;
+    // }
 
     receive() external payable {}
     

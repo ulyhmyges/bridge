@@ -205,6 +205,7 @@ contract GoldTest is Test {
     
     /// GoldScript test
     function test_Run() public {
+      script.setUp();
       script.run();
     }
 
