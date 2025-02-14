@@ -9,6 +9,7 @@ contract GoldScript is Script {
     Lottery public lottery;
     address public wallet;
     address public account;
+    uint256 public subscriptionId = 90256203075644519698193909098372117001279731851240498108137329860284191118063;
 
     function setUp() public {
         wallet = address(vm.envAddress("WALLET"));
@@ -17,23 +18,15 @@ contract GoldScript is Script {
 
     function run() public {
         vm.startBroadcast(wallet);
-        lottery = new Lottery(1);
+        lottery = new Lottery(subscriptionId);
         gold = new Gold(50*10**18, wallet, address(lottery)); // 50 GT
         
         // check balance 
         console.log("USER tokens : ", gold.balanceOf(account), " GDZ");
+        console.log("Wallet tokens: ", gold.balanceOf(wallet), "GDZ");
 
         // buy one GT token
       
-        (bool success, ) = address(gold).call{value: 0.03555 ether}(abi.encodeWithSignature("safeMint(address)", account));
-        console.log(success);
-
-        // check balance of account 
-        console.log("USER tokens : ", gold.balanceOf(account), " GDZ"); // 1.013010005377997198e18
-
-        // wallet balance
-        console.log(wallet.balance); // O.996131515142992556 Sepolia ETH
-        console.log("wallet tokens: ", gold.balanceOf(wallet)); // 50000000000000000000
         vm.stopBroadcast();
     }
 }

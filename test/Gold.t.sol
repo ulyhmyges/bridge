@@ -160,16 +160,6 @@ contract GoldTest is Test {
       assertEq(amountWEI, amountWEI);
     }
 
-
-    // function test_GetWEI_failed() public {
-    //   uint256 priceGD = gold.getXAU_USD();
-    //   uint256 priceED = gold.getETH_USD();
-
-    //   vm.expectRevert();
-    //   uint256 price = gold.getWEI(0, priceGD, priceED);
-    //   assertEq(price, 0);
-    // }
-
     function test_Fees() public view {
       uint256 tax = gold.fees(100);
       assertEq(tax, 5);
@@ -196,13 +186,6 @@ contract GoldTest is Test {
       vm.stopBroadcast();
     }
 
-
-    // function withdraw() public onlyOwner whenNotPaused {
-    //     require(address(this).balance > 0, "No ETH to withdraw");
-    //     (bool success, ) = owner.call{value: address(this).balance}("");
-    //     require(success, "Transfer failed.");
-    // }
-    
     /// GoldScript test
     function test_Run() public {
       script.setUp();

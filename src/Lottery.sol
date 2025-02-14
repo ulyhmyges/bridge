@@ -23,15 +23,15 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 contract Lottery is VRFConsumerBaseV2Plus {
 
     uint256 s_subscriptionId;
-    address vrfCoordinator = 0x8103B0A8A00be2DDC778e6e7eaa21791Cd364625;
+    address vrfCoordinator = 0x9DdfaCa8183c41ad55329BdeeD9F6A8d53168B1B;
     bytes32 s_keyHash =
-        0x474e34a077df58807dbe9c96d3c009b23b3c6d0cce433e59bbf5b34f823bc56c;
+        0x787d74caea10b2b357790d5b5247c2f63d1d91572a9846f780606e4d953677ae;
     uint32 callbackGasLimit = 40000;
     uint16 requestConfirmations = 3;
     uint32 numWords = 1;
 
     uint256 public feePercent = 5;
-    uint256 public lotteryPool;
+
     bytes32 internal keyHash;
     uint256 internal fee;
 
@@ -97,7 +97,7 @@ contract Lottery is VRFConsumerBaseV2Plus {
 
     // Lancer la loterie via Chainlink VRF
     function requestRandomWinner() public returns (uint256 requestId) {
-        require(lotteryPool > 0, "Lottery pool is empty");
+        require(address(this).balance > 0, "Lottery pool is empty");
         requestId = s_vrfCoordinator.requestRandomWords(
             VRFV2PlusClient.RandomWordsRequest({
                 keyHash: s_keyHash,
@@ -122,8 +122,8 @@ contract Lottery is VRFConsumerBaseV2Plus {
         require(participants.length > 0, "No participants in the lottery");
         uint256 winnerIndex = randomWords[0] % participants.length;
         winner = participants[winnerIndex];
-        payable(winner).transfer(lotteryPool); // Transférer le pool au gagnant
-        lotteryPool = 0; // Réinitialiser le pool
+        (bool success, ) = payable(winner).call{value: address(this).balance}("");
+        require(success, "Transfer lottery failed ");
         delete participants; // Réinitialiser les participants
     }
 
