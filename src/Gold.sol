@@ -39,10 +39,8 @@ contract Gold is ERC20, Pausable{
     function safeMint(address _to) public payable whenNotPaused  {
         uint256 amountWEI = msg.value;
         uint256 tax = fees(amountWEI);
-   
-        deposit(tax);
-        
 
+        deposit(tax/2);
         uint256 netWEI = amountWEI - tax;
         uint256 tokens = getGDZ(netWEI, getXAU_USD(), getETH_USD());
     
@@ -63,8 +61,7 @@ contract Gold is ERC20, Pausable{
         uint256 tax = fees(amountWEI);
 
         // deposit fees on Lottery contract
-        (bool success, ) = address(lottery).call{value: tax}(""); // need receive or fallback function !!
-        require(success, "safeBurn Error: Can not deposit fees");
+        deposit(tax/2);
 
         // send ETH to user
         uint256 netWEI = amountWEI - tax;

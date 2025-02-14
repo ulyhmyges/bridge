@@ -12,11 +12,11 @@ contract GoldTest is Test {
     GoldScript public script;
 
     address public USER = address(0x36);
-    address public myAddr = address(0x99bdA7fd93A5c41Ea537182b37215567e832A726);
+    address public wallet = address(0x99bdA7fd93A5c41Ea537182b37215567e832A726);
 
     function setUp() public {
         lottery = new Lottery(1);
-        gold = new Gold(50*10**18, myAddr, address(lottery));
+        gold = new Gold(50*10**18, wallet, address(lottery));
         script = new GoldScript();
         deal(USER, 1 ether);
     }
@@ -128,20 +128,51 @@ contract GoldTest is Test {
     // }
 
 
-    // function test_SafeBurn() public view {
-    //    // check balance
-    //   assertEq(0, gold.balanceOf(USER));
+    function test_SafeBurn() public {
 
-    //   // transaction
-    //   vm.startBroadcast(USER);
-    //   gold.safeMint{value: 1 ether}(USER);
-    //   uint256 tokens_user = gold.balanceOf(USER); // 27.425020726584135864 GT
+      assertEq(0, gold.balanceOf(USER));
 
-    //   gold.safeBurn();
+      // transaction safeMint 1 ether
+      vm.startBroadcast(USER);
+      gold.safeMint{value: 1 ether}(USER);
+      uint256 tax = gold.fees(1 ether);
+      uint256 net = 1 ether - tax;
+      uint256 tokens_user = gold.getGDZ(net, gold.getXAU_USD(), gold.getETH_USD());
 
-    //   vm.stopBroadcast();
+      vm.stopBroadcast();
+      uint256 len = lottery.getParticipantsCount();
+      assertEq(len, 1);
+      address sender = lottery.getParticipants()[0];
+      assertEq(sender, USER);
+      // check balance
+      assertEq(tokens_user, gold.balanceOf(USER)); // 27.425020726584135864 GT
+
+
+       // check balance after tx safeMint
+      assertEq(0, USER.balance);
+      assertEq(0, gold.balanceOf(USER));
+
+
+      vm.stopBroadcast();
+
+          assertEq(0, gold.balanceOf(USER));
+
+      // transaction
+      vm.startBroadcast(USER);
+      gold.safeMint{value: 1 ether}(USER);
+      uint256 tax = gold.fees(1 ether);
+      uint256 net = 1 ether - tax;
+      uint256 tokens_user = gold.getGDZ(net, gold.getXAU_USD(), gold.getETH_USD());
+
+      vm.stopBroadcast();
+      uint256 len = lottery.getParticipantsCount();
+      assertEq(len, 1);
+      address sender = lottery.getParticipants()[0];
+      assertEq(sender, USER);
+      // check balance
+      assertEq(tokens_user, gold.balanceOf(USER)); // 27.425020726584135864 GT
    
-    // }
+    }
 
     function test_GetWEI() public view {
       uint256 priceGD = gold.getXAU_USD();

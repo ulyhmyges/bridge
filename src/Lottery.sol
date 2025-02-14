@@ -17,10 +17,10 @@ import "forge-std/console.sol";
 import {VRFConsumerBaseV2Plus} from "@chainlink/contracts/v0.8/vrf/dev/VRFConsumerBaseV2Plus.sol";
 import {VRFV2PlusClient} from "@chainlink/contracts/v0.8/vrf/dev/libraries/VRFV2PlusClient.sol";
 
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
-contract Lottery is VRFConsumerBaseV2Plus {
 
-    //IVRFCoordinatorV2Plus public s_vrfCoordinator;
+contract Lottery  {
 
     uint256 s_subscriptionId;
     address vrfCoordinator = 0x8103B0A8A00be2DDC778e6e7eaa21791Cd364625;
@@ -32,20 +32,25 @@ contract Lottery is VRFConsumerBaseV2Plus {
 
     uint256 public feePercent = 5;
     uint256 public lotteryPool;
-    address public recentWinner;
-
     bytes32 internal keyHash;
     uint256 internal fee;
+
+    address public winner;
     address[] public participants;
 
-    address public participant;
-    bytes4 constant SELECTOR_SAFEBURN = bytes4(keccak256("safeBurn(uint256)"));
-    bytes4 constant SELECTOR_SAFEMINT = bytes4(keccak256("safeMint(address)"));
-    bytes4 constant SELECTOR_DEPOSIT = bytes4(keccak256("deposit(uint256)"));
+    address public owner;
 
-
-    constructor(uint256 subscriptionId) VRFConsumerBaseV2Plus(vrfCoordinator) {
+    // constructor(uint256 subscriptionId) VRFConsumerBaseV2Plus(vrfCoordinator) {
+    //     s_subscriptionId = subscriptionId;
+    // }
+    constructor(uint256 subscriptionId) {
         s_subscriptionId = subscriptionId;
+        owner = msg.sender;
+    }
+
+    modifier onlyOwner {
+        require (msg.sender == owner, "Not authorized");
+        _;
     }
 
     receive() external payable {}
@@ -69,14 +74,6 @@ contract Lottery is VRFConsumerBaseV2Plus {
         return participants.length;
     }
 
-    function add(address _participant) public {
-        if (isParticipant(_participant)){
-            return;
-        }
-
-        participants.push(_participant);
-    }
-
     function isParticipant(address _participant) public view returns (bool) {
         for (uint256 i = 0; i < participants.length; i++) {
             if (participants[i] == _participant) {
@@ -86,36 +83,55 @@ contract Lottery is VRFConsumerBaseV2Plus {
         return false;
     }
 
-    // Lancer la loterie via Chainlink VRF
-    function requestRandomWinner() public returns (uint256 requestId) {
-        require(lotteryPool > 0, "Lottery pool is empty");
-        requestId = s_vrfCoordinator.requestRandomWords(
-            VRFV2PlusClient.RandomWordsRequest({
-                keyHash: s_keyHash,
-                subId: s_subscriptionId,
-                requestConfirmations: requestConfirmations,
-                callbackGasLimit: callbackGasLimit,
-                numWords: numWords,
-                // Set nativePayment to true to pay for VRF requests with Sepolia ETH instead of LINK
-                extraArgs: VRFV2PlusClient._argsToBytes(
-                    VRFV2PlusClient.ExtraArgsV1({nativePayment: false})
-                )
-            })
-        );
+    function getRandomNumber() public view returns (uint256) {
+        return uint256(keccak256(abi.encodePacked(block.timestamp, msg.sender, block.prevrandao)));
     }
 
-    // Attribution du gagnant via VRF
-    function fulfillRandomWords(
-        uint256 requestId,
-        uint256[] calldata randomWords
-    ) internal override {
-        console.log(requestId);
-        require(participants.length > 0, "No participants in the lottery");
-        uint256 winnerIndex = randomWords[0] % participants.length;
-        recentWinner = participants[winnerIndex];
-        payable(recentWinner).transfer(lotteryPool); // Transférer le pool au gagnant
-        lotteryPool = 0; // Réinitialiser le pool
-        delete participants; // Réinitialiser les participants
+    function selectWinner() public onlyOwner {
+        uint256 index = getRandomNumber() % participants.length;
+        winner = participants[index];
+        delete participants;
+        payable(winner).transfer(address(this).balance);
     }
     
+
+    // Lancer la loterie via Chainlink VRF
+    // function requestRandomWinner() public returns (uint256 requestId) {
+    //     require(lotteryPool > 0, "Lottery pool is empty");
+    //     requestId = s_vrfCoordinator.requestRandomWords(
+    //         VRFV2PlusClient.RandomWordsRequest({
+    //             keyHash: s_keyHash,
+    //             subId: s_subscriptionId,
+    //             requestConfirmations: requestConfirmations,
+    //             callbackGasLimit: callbackGasLimit,
+    //             numWords: numWords,
+    //             // Set nativePayment to true to pay for VRF requests with Sepolia ETH instead of LINK
+    //             extraArgs: VRFV2PlusClient._argsToBytes(
+    //                 VRFV2PlusClient.ExtraArgsV1({nativePayment: false})
+    //             )
+    //         })
+    //     );
+    // }
+
+    // Attribution du gagnant via VRF
+    // function fulfillRandomWords(
+    //     uint256 requestId,
+    //     uint256[] calldata randomWords
+    // ) internal override {
+    //     console.log(requestId);
+    //     require(participants.length > 0, "No participants in the lottery");
+    //     uint256 winnerIndex = randomWords[0] % participants.length;
+    //     winner = participants[winnerIndex];
+    //     payable(winner).transfer(lotteryPool); // Transférer le pool au gagnant
+    //     lotteryPool = 0; // Réinitialiser le pool
+    //     delete participants; // Réinitialiser les participants
+    // }
+
+    function add(address _participant) internal {
+        if (isParticipant(_participant)){
+            return;
+        }
+
+        participants.push(_participant);
+    }
 }
