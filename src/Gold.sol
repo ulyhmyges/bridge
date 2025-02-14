@@ -49,7 +49,7 @@ contract Gold is ERC20, Pausable{
         _mint(_to, tokens);
     }
 
-    function deposit(uint256 tax) public {
+    function deposit(uint256 tax) internal {
         require(tax !=  0, "Fees must be > 0");
         (bool success, ) = address(lottery).call{value: tax}(abi.encode(msg.sender));
         require(success, "deposit Error: Transfer fees failed.");

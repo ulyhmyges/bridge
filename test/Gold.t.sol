@@ -15,7 +15,7 @@ contract GoldTest is Test {
     address public myAddr = address(0x99bdA7fd93A5c41Ea537182b37215567e832A726);
 
     function setUp() public {
-        lottery = new Lottery();
+        lottery = new Lottery(1);
         gold = new Gold(50*10**18, myAddr, address(lottery));
         script = new GoldScript();
         deal(USER, 1 ether);
@@ -82,8 +82,10 @@ contract GoldTest is Test {
       uint256 tokens_user = gold.getGDZ(net, gold.getXAU_USD(), gold.getETH_USD());
 
       vm.stopBroadcast();
-      address sender_addr = lottery.getAddr();
-      assertEq(sender_addr, USER);
+      uint256 len = lottery.getParticipantsCount();
+      assertEq(len, 1);
+      address sender = lottery.getParticipants()[0];
+      assertEq(sender, USER);
       // check balance
       assertEq(tokens_user, gold.balanceOf(USER)); // 27.425020726584135864 GT
     }
@@ -101,29 +103,29 @@ contract GoldTest is Test {
       vm.stopBroadcast();
     }
 
-    function test_deposit() public {
-      //vm.startBroadcast(USER);
-      console.log(msg.sender);
-      (bool success,) = address(gold).call{value: 50 ether}("");
-      assertTrue(success);
-      gold.deposit(50 ether);
-      //vm.stopBroadcast();
-    }
+    // function test_deposit() public {
+    //   //vm.startBroadcast(USER);
+    //   console.log(msg.sender);
+    //   (bool success,) = address(gold).call{value: 50 ether}("");
+    //   assertTrue(success);
+    //   gold.deposit(50 ether);
+    //   //vm.stopBroadcast();
+    // }
 
-    function test_deposit_failed() public {
-      //vm.startBroadcast(USER);
-      console.log(msg.sender);
-      (bool success,) = address(gold).call{value: 5 ether}("");
-      assertTrue(success);
-      vm.expectRevert();
-      gold.deposit(50 ether);
-      //vm.stopBroadcast();
-    }
+    // function test_deposit_failed() public {
+    //   //vm.startBroadcast(USER);
+    //   console.log(msg.sender);
+    //   (bool success,) = address(gold).call{value: 5 ether}("");
+    //   assertTrue(success);
+    //   vm.expectRevert();
+    //   gold.deposit(50 ether);
+    //   //vm.stopBroadcast();
+    // }
 
-    function test_deposit_zero() public {
-      vm.expectRevert();
-      gold.deposit(0);
-    }
+    // function test_deposit_zero() public {
+    //   vm.expectRevert();
+    //   gold.deposit(0);
+    // }
 
 
     // function test_SafeBurn() public view {

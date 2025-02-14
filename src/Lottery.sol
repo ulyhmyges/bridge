@@ -8,14 +8,19 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 
 import {ERC20Burnable} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import {ERC20Permit} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
-import "@chainlink/src/v0.8/vrf/VRFConsumerBase.sol";
+//import "@chainlink/contracts/v0.8/vrf/VRFConsumerBase.sol";
+
+import {IVRFCoordinatorV2Plus} from "@chainlink/contracts/v0.8/vrf/dev/interfaces/IVRFCoordinatorV2Plus.sol";
+
 import "forge-std/console.sol";
 
-import {VRFConsumerBaseV2Plus} from "@chainlink/src/v0.8/vrf/dev/VRFConsumerBaseV2Plus.sol";
-import {VRFV2PlusClient} from "@chainlink/src/v0.8/vrf/dev/libraries/VRFV2PlusClient.sol";
+import {VRFConsumerBaseV2Plus} from "@chainlink/contracts/v0.8/vrf/dev/VRFConsumerBaseV2Plus.sol";
+import {VRFV2PlusClient} from "@chainlink/contracts/v0.8/vrf/dev/libraries/VRFV2PlusClient.sol";
 
 
-contract Lottery {
+contract Lottery is VRFConsumerBaseV2Plus {
+
+    //IVRFCoordinatorV2Plus public s_vrfCoordinator;
 
     uint256 s_subscriptionId;
     address vrfCoordinator = 0x8103B0A8A00be2DDC778e6e7eaa21791Cd364625;
@@ -31,19 +36,15 @@ contract Lottery {
 
     bytes32 internal keyHash;
     uint256 internal fee;
-    address[] private participants;
+    address[] public participants;
 
-    address public owner;
     address public participant;
+    bytes4 constant SELECTOR_SAFEBURN = bytes4(keccak256("safeBurn(uint256)"));
+    bytes4 constant SELECTOR_SAFEMINT = bytes4(keccak256("safeMint(address)"));
+    bytes4 constant SELECTOR_DEPOSIT = bytes4(keccak256("deposit(uint256)"));
 
-    constructor() {
-        owner = msg.sender;
-    }
-    constructor(
-        uint256 subscriptionId
-    )
-        VRFConsumerBaseV2Plus(vrfCoordinator)
-    {
+
+    constructor(uint256 subscriptionId) VRFConsumerBaseV2Plus(vrfCoordinator) {
         s_subscriptionId = subscriptionId;
     }
 
@@ -57,9 +58,24 @@ contract Lottery {
             receivedAddress := calldataload(0)
         }
 
-        participant = receivedAddress;
+        add(receivedAddress);
     }
 
+    function getParticipants() public view returns (address[] memory){
+        return participants;
+    }
+
+    function getParticipantsCount() public view returns (uint256) {
+        return participants.length;
+    }
+
+    function add(address _participant) public {
+        if (isParticipant(_participant)){
+            return;
+        }
+
+        participants.push(_participant);
+    }
 
     function isParticipant(address _participant) public view returns (bool) {
         for (uint256 i = 0; i < participants.length; i++) {
@@ -68,10 +84,6 @@ contract Lottery {
             }
         }
         return false;
-    }
-
-    function getParticipantsCount() public view returns (uint256) {
-        return participants.length;
     }
 
     // Lancer la loterie via Chainlink VRF
@@ -97,6 +109,7 @@ contract Lottery {
         uint256 requestId,
         uint256[] calldata randomWords
     ) internal override {
+        console.log(requestId);
         require(participants.length > 0, "No participants in the lottery");
         uint256 winnerIndex = randomWords[0] % participants.length;
         recentWinner = participants[winnerIndex];
@@ -104,23 +117,5 @@ contract Lottery {
         lotteryPool = 0; // Réinitialiser le pool
         delete participants; // Réinitialiser les participants
     }
-
-    function getAddr() public view returns (address) {
-        return participant;
-    }
-
-    receive() external payable {}
-
-    modifier onlyOwner {
-        require(msg.sender == owner);
-        _;
-    }
-
-    function withdraw() public payable onlyOwner {
-        require(address(this).balance > 0, "No funds available.");
-        (bool success, ) = owner.call{value: address(this).balance}("");
-        require(success, "Transfer failed.");
-    }
-
-
+    
 }
