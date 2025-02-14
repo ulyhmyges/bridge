@@ -82,6 +82,8 @@ contract GoldTest is Test {
       uint256 tokens_user = gold.getGDZ(net, gold.getXAU_USD(), gold.getETH_USD());
 
       vm.stopBroadcast();
+      address sender_addr = lottery.getAddr();
+      assertEq(sender_addr, USER);
       // check balance
       assertEq(tokens_user, gold.balanceOf(USER)); // 27.425020726584135864 GT
     }

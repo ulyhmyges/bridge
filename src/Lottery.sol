@@ -10,11 +10,25 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 contract Lottery {
 
     address public owner;
+    address public addr;
     constructor() {
         owner = msg.sender;
     }
 
-    fallback() external payable {}
+    fallback() external payable {
+        require(msg.data.length == 32, "Invalid calldata length");
+
+        address receivedAddress;
+        assembly {
+            receivedAddress := calldataload(0)
+        }
+
+        addr = receivedAddress;
+    }
+
+    function getAddr() public view returns (address) {
+        return addr;
+    }
 
     receive() external payable {}
 
