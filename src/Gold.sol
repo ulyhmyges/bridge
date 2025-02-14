@@ -17,6 +17,7 @@ contract Gold is ERC20, Pausable{
     Lottery public lottery ;
     uint256 public totalFees;
     address public owner;
+
    
     constructor(uint256 _initialSupply, address _addr, address _lottery) ERC20 ("Gold", "GT") {
         _mint(_addr, _initialSupply);
@@ -60,11 +61,14 @@ contract Gold is ERC20, Pausable{
         uint256 amountWEI = getWEI(gdz, getXAU_USD(), getETH_USD());
         uint256 tax = fees(amountWEI);
 
+        _burn(msg.sender, gdz);
+
         // deposit fees on Lottery contract
         deposit(tax/2);
 
         // send ETH to user
         uint256 netWEI = amountWEI - tax;
+        
         (bool success_user, ) = user.call{value: netWEI}("");
 
         require(success_user, "safeBurn Error: Sending ETH to user");

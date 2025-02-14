@@ -139,39 +139,39 @@ contract GoldTest is Test {
       uint256 net = 1 ether - tax;
       uint256 tokens_user = gold.getGDZ(net, gold.getXAU_USD(), gold.getETH_USD());
 
-      vm.stopBroadcast();
+      // tests
       uint256 len = lottery.getParticipantsCount();
       assertEq(len, 1);
       address sender = lottery.getParticipants()[0];
       assertEq(sender, USER);
-      // check balance
-      assertEq(tokens_user, gold.balanceOf(USER)); // 27.425020726584135864 GT
 
+      // check tokens
+      assertEq(tokens_user, gold.balanceOf(USER)); // 27.425020726584135864 GT
 
        // check balance after tx safeMint
       assertEq(0, USER.balance);
-      assertEq(0, gold.balanceOf(USER));
-
-
-      vm.stopBroadcast();
-
-          assertEq(0, gold.balanceOf(USER));
 
       // transaction
-      vm.startBroadcast(USER);
-      gold.safeMint{value: 1 ether}(USER);
-      uint256 tax = gold.fees(1 ether);
-      uint256 net = 1 ether - tax;
-      uint256 tokens_user = gold.getGDZ(net, gold.getXAU_USD(), gold.getETH_USD());
+  
+      gold.safeBurn(gold.balanceOf(USER));
 
-      vm.stopBroadcast();
-      uint256 len = lottery.getParticipantsCount();
+      // verification
+      tax = gold.fees(1 ether);
+      net = 1 ether - tax;
+      tokens_user = gold.getGDZ(net, gold.getXAU_USD(), gold.getETH_USD());
+      uint256 amountWEI = gold.getWEI(tokens_user, gold.getXAU_USD(), gold.getETH_USD());
+      tax = gold.fees(amountWEI);
+      uint256 userWEI = amountWEI - tax;
+
+      len = lottery.getParticipantsCount();
       assertEq(len, 1);
-      address sender = lottery.getParticipants()[0];
+      sender = lottery.getParticipants()[0];
       assertEq(sender, USER);
+
       // check balance
-      assertEq(tokens_user, gold.balanceOf(USER)); // 27.425020726584135864 GT
-   
+      assertEq(0, gold.balanceOf(USER));  // tokens = 0
+      assertEq(userWEI, USER.balance);    // return equivalent in WEI = O.902500000000000000 ETH
+      vm.stopBroadcast();
     }
 
     function test_GetWEI() public view {
